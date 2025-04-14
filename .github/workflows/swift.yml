@@ -27,10 +27,13 @@ jobs:
 
       - name: Build App
         run: |
-          xcodebuild build \
-            -sdk iphoneos \
-            -destination "generic/platform=iOS" \
-            CODE_SIGNING_ALLOWED=NO
+          xcodebuild \
+          -workspace WaddleWallet.xcodeproj/project.xcworkspace \
+          -scheme WaddleWallet \
+          -sdk iphoneos \
+          -destination "generic/platform=iOS" \
+          CODE_SIGNING_ALLOWED=NO
+
 
       - name: Run Unit Tests
         run: |
