@@ -2,65 +2,157 @@
 //  ContentView.swift
 //  WaddleWallet
 //
-//  Created by Matt McCoy on 4/12/25.
+//  Created by Matt McCoy on 4/7/25.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var accounts: [Account]
+
+    @State private var tabs: [TabModel] = TabModel.Tab.allCases.map { TabModel(id: $0) }
+    @State private var activeTab: TabModel.Tab? = .accounts
+    @State private var mainViewScrollState: TabModel.Tab? = nil
+    @State private var tabBarScrollState: TabModel.Tab? = nil
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        #if os(iOS)
+            VStack {
+                HeaderView()
+                HorizontalTabBar()
+
+                GeometryReader { proxy in
+                    let size = proxy.size
+
+                    ScrollView(.horizontal) {
+                        LazyHStack(spacing: 0) {
+                            ForEach(tabs) { tab in
+                                tab.id.view
+                                    .padding(.horizontal, 16)
+                                    .frame(width: size.width, height: size.height)
+                                    .clipped()
+                            }
+                        }
+                        .scrollTargetLayout()
+                    }
+                    .scrollPosition(id: $mainViewScrollState)
+                    .onChange(of: mainViewScrollState) {
+                        activeTab = mainViewScrollState
+                        tabBarScrollState = mainViewScrollState
+                    }
+                    .scrollIndicators(.hidden)
+                    .scrollTargetBehavior(.paging)
+                }
+            }
+        #endif
+
+        #if os(macOS)
+            NavigationSplitView {
+                List {
+                    ForEach(tabs) { tab in
+                        NavigationLink {
+                            tab.id.view
+                                .padding(.horizontal, 16)
+                                .clipped()
+                        } label: {
+                            Label(tab.id.title, systemImage: tab.id.icon)
+                        }
+                    }
+
+                    Divider()
+                    Text("My Accounts")
+                        .font(.caption)
+                        .fontWeight(.black)
+                        .foregroundColor(.gray)
+
+                    ForEach(accounts) { account in
+                        NavigationLink {
+                            Text("Item at \(account.bank)")
+                        } label: {
+                            Text(account.bank)
+                        }
+                    }
+                    .onDelete(perform: deleteItems)
+                }
+                .navigationSplitViewColumnWidth(min: 180, ideal: 200)
+                .toolbar {
+                    ToolbarItem {
+                        Button(action: addItem) {
+                            Label("Add Account", systemImage: "plus")
+                        }
                     }
                 }
-                .onDelete(perform: deleteItems)
+            } detail: {
+                Text("Select an account")
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
+        #endif
+    }
+
+    @ViewBuilder
+    private func HeaderView() -> some View {
+        HStack {
+            Image(.logo)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 200, height: 50)
         }
+    }
+
+    @ViewBuilder
+    private func HorizontalTabBar() -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack {
+                ForEach(tabs) { tab in
+                    Button(action: {
+                        withAnimation(.snappy) {
+                            activeTab = tab.id
+                            tabBarScrollState = tab.id
+                            mainViewScrollState = tab.id
+                        }
+                    }) {
+                        Text(tab.id.title)
+                            .fontWeight(.medium)
+                            .foregroundColor(activeTab == tab.id ? .white : .blue)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(activeTab == tab.id ? Color.blue : Color.clear)
+                            )
+                    }
+                    .id(tab.id)
+                }
+            }
+            .padding(.horizontal, 5)
+            .scrollTargetLayout()
+        }
+        .scrollPosition(
+            id: .init(get: { tabBarScrollState }, set: { _ in }),
+            anchor: .center
+        )
     }
 
     private func addItem() {
         withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
+            let newAccount = Account(bank: "BofA", name: "Checking", balance: 1234.56)
+            modelContext.insert(newAccount)
+            try? modelContext.save()
         }
     }
 
-    private func deleteItems(offsets: IndexSet) {
+    private func deleteItems(at offsets: IndexSet) {
         withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            for offset in offsets {
+                modelContext.delete(accounts[offset])
             }
+            try? modelContext.save()
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: Account.self, inMemory: true)
 }

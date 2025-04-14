@@ -5,8 +5,8 @@
 //  Created by Matt McCoy on 4/12/25.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct WaddleWalletApp: App {
