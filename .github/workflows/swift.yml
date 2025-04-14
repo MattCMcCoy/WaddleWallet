@@ -13,22 +13,12 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: GitHub Action for SwiftLint
-        uses: norio-nomura/action-swiftlint@4.2.0
+        uses: norio-nomura/action-swiftlint@3.2.1
 
   Build:
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install CocoaPods
-        run: |
-          sudo gem install cocoapods
-          pod --version
-
-      - name: Install Dependencies
-        run: |
-          cd GitHubActions
-          pod install --repo-update
 
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
