@@ -91,14 +91,18 @@ struct Accounts: View {
     var AssetsToDebtText: some View {
         Group{
             HStack {
-                Text("Assets: $\(String(format: "%.2f", (selectedData ?? data.last!).asset))")
-                    .font(.caption)
+                Text("Assets:\n$\(String(format: "%.2f", (selectedData ?? data.last!).asset))")
+                    .font(.footnote)
                     .fontWeight(.bold)
-                    .foregroundColor(Color.blue)
-                Text("Debts: $\(String(format: "%.2f", (selectedData ?? data.last!).debt))")
-                    .font(.caption)
+                    .foregroundColor(Color.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.trailing)
+                Text("Debt:\n$\(String(format: "%.2f", (selectedData ?? data.last!).debt))")
+                    .font(.footnote)
                     .fontWeight(.bold)
-                    .foregroundColor(Color.red)
+                    .foregroundColor(Color.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.leading)
             }
         }
     }
@@ -142,45 +146,43 @@ struct Accounts: View {
 
     var body: some View {
         VStack {
-            AssetsToDebtText
-            ZStack(alignment: .bottomTrailing) {
+            VStack {
                 Group {
-                    if showNetAssets {
-                        netAssetChart
-                        .chartYAxisLabel("Net Assets ($)", position: .leading)
-                    } else {
-                        assetDebtLinesChart
-                        .chartForegroundStyleScale([
-                            "Assets": .blue,
-                            "Debt": .red
-                        ])
-                        .chartYAxisLabel("Value ($)", position: .leading)
-                    }
+                    AssetsToDebtText
                 }
-                .chartXSelection(value: $rawSelectedDate)
-                .frame(width: 300, height: 100)
-                .padding(30)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.blue, lineWidth: 2)
-                )
-                .chartXAxis {}
-                .chartYAxis {}
-                
-                // Toggle button (bottom right)
-                Button(action: {
-                    withAnimation {
-                        showChartTogglePopup.toggle()
+                .padding()
+                ZStack(alignment: .bottomTrailing) {
+                    Group {
+                        if showNetAssets {
+                            netAssetChart
+                        } else {
+                            assetDebtLinesChart
+                            .chartForegroundStyleScale([
+                                "Assets": .blue,
+                                "Debt": .red
+                            ])
+                        }
                     }
-                }) {
-                    Image(systemName: "slider.horizontal.3")
-                        .padding(10)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
+                    .chartXSelection(value: $rawSelectedDate)
+                    .frame(width: 300, height: 100)
+                    .padding(30)
+                    .chartXAxis {}
+                    .chartYAxis {}
+                    
+                    // Toggle button (bottom right)
+                    Button(action: {
+                        withAnimation {
+                            showChartTogglePopup.toggle()
+                        }
+                    }) {
+                        Image(systemName: "slider.horizontal.3")
+                            .padding(10)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                    }
+                    .padding(10)
                 }
-                .padding(10)
             }
-            
             Divider()
 
             VStack(alignment: .leading, spacing: 0) {
