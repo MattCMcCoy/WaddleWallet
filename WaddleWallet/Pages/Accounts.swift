@@ -9,6 +9,33 @@ import Charts
 import SwiftData
 import SwiftUI
 
+
+let data: [FinancialData] = [
+    FinancialData(date: .now.addingTimeInterval(-86400 * 9), asset: 8500, debt: 2800),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 8), asset: 9000, debt: 2900),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 7), asset: 9500, debt: 2950),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 6), asset: 9800, debt: 3000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 5), asset: 10000, debt: 3100),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 4), asset: 10500, debt: 3200),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 3), asset: 12000, debt: 3500),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 2), asset: 12500, debt: 4000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 1), asset: 13000, debt: 4200),
+    FinancialData(date: .now, asset: 90000, debt: 4500),
+]
+
+let data2: [FinancialData] = [
+    FinancialData(date: .now.addingTimeInterval(-86400 * 9), asset: 8500, debt: 20000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 8), asset: 9000, debt: 30000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 7), asset: 9500, debt: 40000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 6), asset: 9800, debt: 60000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 5), asset: 10000, debt: 45000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 4), asset: 10500, debt: 30000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 3), asset: 12000, debt: 20000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 2), asset: 12500, debt: 15000),
+    FinancialData(date: .now.addingTimeInterval(-86400 * 1), asset: 13000, debt: 10000),
+    FinancialData(date: .now, asset: 90000, debt: 5000),
+]
+
 struct FinancialData: Identifiable {
     let id = UUID()
     let date: Date
@@ -27,37 +54,19 @@ struct FinancialData: Identifiable {
 }
 
 struct Accounts: View {
+    @Query(sort: \Account.name) private var accounts: [Account]
+    @Environment(\.modelContext) private var context
+
     @State private var rawSelectedDate: Date? = nil
     @State private var showNetAssets = true
     @State private var showChartTogglePopup = false
-    
-    let data: [FinancialData] = [
-        FinancialData(date: .now.addingTimeInterval(-86400 * 9), asset: 8500, debt: 2800),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 8), asset: 9000, debt: 2900),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 7), asset: 9500, debt: 2950),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 6), asset: 9800, debt: 3000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 5), asset: 10000, debt: 3100),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 4), asset: 10500, debt: 3200),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 3), asset: 12000, debt: 3500),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 2), asset: 12500, debt: 4000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 1), asset: 13000, debt: 4200),
-        FinancialData(date: .now, asset: 90000, debt: 4500),
-    ]
-    
-    let data2: [FinancialData] = [
-        FinancialData(date: .now.addingTimeInterval(-86400 * 9), asset: 8500, debt: 20000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 8), asset: 9000, debt: 30000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 7), asset: 9500, debt: 40000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 6), asset: 9800, debt: 60000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 5), asset: 10000, debt: 45000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 4), asset: 10500, debt: 30000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 3), asset: 12000, debt: 20000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 2), asset: 12500, debt: 15000),
-        FinancialData(date: .now.addingTimeInterval(-86400 * 1), asset: 13000, debt: 10000),
-        FinancialData(date: .now, asset: 90000, debt: 5000),
-    ]
-
     @State private var isExpanded = false
+    
+    private let accountCategories: [(title: String, types: [AccountType])] = [
+        ("Credit Cards", [.credit]),
+        ("Checking & Savings", [.checking, .savings]),
+        ("Investments", [.investment])
+    ]
 
     var selectedData: FinancialData? {
         guard let rawSelectedDate else { return nil }
@@ -74,71 +83,88 @@ struct Accounts: View {
                 .foregroundStyle(Color.gray.opacity(0.3))
                 .offset(yStart: -10)
                 .zIndex(-1)
-                .annotation(
-                    position: .top,
-                    spacing: 0,
-                    overflowResolution: .init(
-                        x: .fit(to: .chart),
-                        y: .disabled
-                    )
-                ) {
+                .annotation(position: .top, spacing: 0, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
                     valueSelectionPopover(selected: selected)
                 }
         }
     }
     
     @ViewBuilder
-    var AssetsToDebtText: some View {
-        Group{
-            HStack {
-                Text("Assets:\n$\(String(format: "%.2f", (selectedData ?? data.last!).asset))")
+    private var chartToggleButton: some View {
+        if showChartTogglePopup {
+            Button(action: {
+                showNetAssets.toggle()
+                showChartTogglePopup = false
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: showNetAssets ? "chart.bar.xaxis" : "chart.line.uptrend.xyaxis")
+                    Text(showNetAssets ? "Show Assets vs Debt" : "Show Net Assets")
+                }
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
+                .shadow(radius: 4)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .padding(.bottom, 60)
+        }
+    }
+
+    var assetsToDebtText: some View {
+        let selected = selectedData ?? data.last!
+        let values: [(String, Double)] = [
+            ("Assets", selected.asset),
+            ("Debt", selected.debt)
+        ]
+
+        return HStack {
+            ForEach(values, id: \.0) { label, value in
+                Text("\(label):\n$\(String(format: "%.2f", value))")
                     .font(.footnote)
                     .fontWeight(.bold)
-                    .foregroundColor(Color.white)
+                    .foregroundColor(.white)
                     .multilineTextAlignment(.center)
-                    .padding(.trailing)
-                Text("Debt:\n$\(String(format: "%.2f", (selectedData ?? data.last!).debt))")
-                    .font(.footnote)
-                    .fontWeight(.bold)
-                    .foregroundColor(Color.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.leading)
+                    .padding(.horizontal)
             }
         }
     }
-    
-    @ViewBuilder
+
     var assetDebtLinesChart: some View {
         Chart {
-            ForEach(data) { element in
-                LineMark(
-                    x: .value("Date", element.date),
-                    y: .value("Asset", element.asset)
-                )
-                .foregroundStyle(by: .value("Type", "Assets"))
-            }
-            
-            ForEach(data2) { element in
-                LineMark(
-                    x: .value("Date", element.date),
-                    y: .value("Debt", element.debt)
-                )
-                .foregroundStyle(by: .value("Type", "Debt"))
-            }
-            
+            assetChartLines()
+            debtChartLines()
             selectionMark
         }
+        .chartForegroundStyleScale(["Assets": .blue, "Debt": .red])
     }
     
-    @ViewBuilder
+    
+    @ChartContentBuilder
+    private func assetChartLines() -> some ChartContent {
+        ForEach(data) {
+            LineMark(x: .value("Date", $0.date), y: .value("Value", $0.asset))
+                .foregroundStyle(by: .value("Type", "Assets"))
+        }
+    }
+
+    @ChartContentBuilder
+    private func debtChartLines() -> some ChartContent {
+        ForEach(data2) {
+            LineMark(x: .value("Date", $0.date), y: .value("Value", $0.debt))
+                .foregroundStyle(by: .value("Type", "Debt"))
+        }
+    }
+
+    private func valueSelectionPopover(selected: FinancialData) -> some View {
+        Text("\(selected.formattedDate)")
+            .font(.caption)
+            .foregroundColor(.blue)
+    }
+
     var netAssetChart: some View {
         Chart {
-            ForEach(data) { element in
-                LineMark(
-                    x: .value("Date", element.date),
-                    y: .value("Net Assets", element.netAsset)
-                )
-                .foregroundStyle(.green)
+            ForEach(data) {
+                LineMark(x: .value("Date", $0.date), y: .value("Net Assets", $0.netAsset))
+                    .foregroundStyle(.green)
             }
             selectionMark
         }
@@ -147,20 +173,15 @@ struct Accounts: View {
     var body: some View {
         VStack {
             VStack {
-                Group {
-                    AssetsToDebtText
-                }
-                .padding()
+                assetsToDebtText
+                    .padding()
+
                 ZStack(alignment: .bottomTrailing) {
                     Group {
                         if showNetAssets {
                             netAssetChart
                         } else {
                             assetDebtLinesChart
-                            .chartForegroundStyleScale([
-                                "Assets": .blue,
-                                "Debt": .red
-                            ])
                         }
                     }
                     .chartXSelection(value: $rawSelectedDate)
@@ -168,8 +189,7 @@ struct Accounts: View {
                     .padding(30)
                     .chartXAxis {}
                     .chartYAxis {}
-                    
-                    // Toggle button (bottom right)
+
                     Button(action: {
                         withAnimation {
                             showChartTogglePopup.toggle()
@@ -183,96 +203,26 @@ struct Accounts: View {
                     .padding(10)
                 }
             }
+
             Divider()
 
-            VStack(alignment: .leading, spacing: 0) {
-                Button(action: {
-                    withAnimation(.easeInOut) {
-                        isExpanded.toggle()
-                    }
-                }) {
-                    HStack {
-                        Text("Credit Cards")
-                            .font(.headline)
-                        Spacer()
-                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    }
-                    .padding(.vertical, 8)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
-
-                if isExpanded {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("• Account 1: $1,200")
-                        Text("• Account 2: $850")
-                        Text("• Account 3: $3,000")
-                    }
-                    .padding(.top, 8)
-                    .transition(.opacity)
+            ScrollView {
+                ForEach(accountCategories, id: \.types) { category in
+                    AccountCategorySection(
+                        title: category.title,
+                        accounts: accounts.filter { category.types.contains($0.accountType) }
+                    )
                 }
             }
-            .padding()
-            .animation(.easeInOut, value: isExpanded)
+            .scrollIndicators(.hidden)
 
             Spacer()
-            // Popup view
-            if showChartTogglePopup {
-                Button(action: {
-                    showNetAssets.toggle()
-                    showChartTogglePopup = false
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: showNetAssets ? "chart.bar.xaxis" : "chart.line.uptrend.xyaxis")
-                        Text(showNetAssets ? "Show Assets vs Debt" : "Show Net Assets")
-                    }
-                    .padding()
-                    .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
-                    .shadow(radius: 4)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.bottom, 60)
-            }
+            chartToggleButton
         }
     }
-    
-    @ChartContentBuilder
-    private func assetChartLines() -> some ChartContent {
-        ForEach(data) { element in
-            LineMark(
-                x: .value("Date", element.date),
-                y: .value("Value", element.asset)
-            )
-            .foregroundStyle(by: .value("Type", "Assets"))
-        }
-    }
-
-    @ChartContentBuilder
-    private func debtChartLines() -> some ChartContent {
-        ForEach(data2) { element in
-            LineMark(
-                x: .value("Date", element.date),
-                y: .value("Value", element.debt)
-            )
-            .foregroundStyle(by: .value("Type", "Debt"))
-        }
-    }
-
-
-
-    @ViewBuilder
-    private func valueSelectionPopover(selected: FinancialData) -> some View {
-        HStack {
-            Text("\(selected.formattedDate)")
-                .font(.caption)
-                .foregroundColor(.blue)
-        }
-    }
-
-    func addAccount() {}
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    Accounts()
+        .modelContainer(SampleData.shared.modelContainer)
 }

@@ -136,7 +136,7 @@ struct ContentView: View {
 
     private func addItem() {
         withAnimation {
-            let newAccount = Account(bank: "BofA", name: "Checking", balance: 1234.56)
+            let newAccount = Account(bank: "BofA", name: "Checking", balance: 1234.56, accountType: AccountType.checking)
             modelContext.insert(newAccount)
             try? modelContext.save()
         }
@@ -154,5 +154,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: Account.self, inMemory: true)
+        .modelContainer(SampleData.shared.modelContainer)
 }
