@@ -23,7 +23,7 @@ struct TabModel: Identifiable {
             case .accounts:
                 Accounts()
             case .transactions:
-                Dashboard()
+                Transactions()
             case .dashboard:
                 Dashboard()
             case .budget:

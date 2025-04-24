@@ -5,50 +5,107 @@
 //  Created by Matt McCoy on 4/7/25.
 //
 
-import Charts
 import SwiftData
 import SwiftUI
 
 struct Dashboard: View {
-    struct ProfitOverTime {
-        var date: Date
-        var profit: Double
-    }
+    @Query(sort: \Account.name) private var accounts: [Account]
+    @Environment(\.modelContext) private var context
 
-    let departmentAProfit: [ProfitOverTime] = [ProfitOverTime(date: Date.now, profit: 20), ProfitOverTime(date: Date.now + 1, profit: 10000)]
+    var dataFromAccounts: SankeyData {
+        var nodesSet: Set<String> = []
+        var nodes: [SankeyNode] = []
+        var links: [SankeyLink] = []
+        var income = 0.0
 
-    let departmentBProfit: [ProfitOverTime] = [ProfitOverTime(date: Date.now, profit: 20), ProfitOverTime(date: Date.now + 1, profit: 400)]
+        for account in accounts {
+            for transaction in account.transactions {
+                guard let transactionType = transaction.transactionType else { continue }
 
-    var body: some View {
-        Chart {
-            ForEach(departmentAProfit, id: \.date) { item in
-                LineMark(
-                    x: .value("Date", item.date),
-                    y: .value("Profit A", item.profit),
-                    series: .value("Company", "A")
-                )
-                .foregroundStyle(.green)
-            }
-            ForEach(departmentBProfit, id: \.date) { item in
-                LineMark(
-                    x: .value("Date", item.date),
-                    y: .value("Profit B", item.profit),
-                    series: .value("Company", "B")
-                )
-                .foregroundStyle(.orange)
+                if transactionType != .income { continue }
+
+                income += transaction.amount
             }
         }
-        .frame(width: /*@START_MENU_TOKEN@*/300.0/*@END_MENU_TOKEN@*/, height: /*@START_MENU_TOKEN@*/100.0/*@END_MENU_TOKEN@*/)
-        Text("Credit Cards")
-            .font(.body)
-            .fontWeight(.light)
-            .foregroundColor(Color.gray)
-            .multilineTextAlignment(.leading)
-            .padding(/*@START_MENU_TOKEN@*/)
+
+        let incomeLabel = "Income"
+        let incomeNode = SankeyNode(name: incomeLabel, color: .gray)
+        nodes.append(incomeNode)
+        nodesSet.insert(incomeLabel)
+
+        for account in accounts {
+            for transaction in account.transactions {
+                guard let category = transaction.category else { continue }
+
+                let categoryLabel = category.name
+                let amount = abs(transaction.amount)
+
+                var categoryNode: SankeyNode? = nil
+                if !nodesSet.contains(categoryLabel) {
+                    categoryNode = SankeyNode(name: categoryLabel, color: category.color)
+                    nodes.append(categoryNode!)
+                    nodesSet.insert(categoryLabel)
+                }
+                else {
+                    continue
+                }
+                
+                links.append(SankeyLink(from: incomeNode, to: categoryNode!, amount: amount))
+            }
+        }
+
+        let leftoverLabel = "Not Yet Categorized"
+        var leftover: Double = income
+        let leftoverNode = SankeyNode(name: leftoverLabel, color: .gray)
+        nodes.append(leftoverNode)
+
+        for link in links {
+            leftover -= link.amount
+        }
+
+        links.append(SankeyLink(from: incomeNode, to: leftoverNode, amount: leftover))
+
+        return SankeyData(nodes: nodes, links: links)
+    }
+
+    var body: some View {
+        HStack {
+                if accounts.isEmpty {
+                    Text("No transactions yet.")
+                } else {
+                    Spacer()
+                    GeometryReader { geometry in
+                        VStack {
+                            Text("Spending by Category")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                            HStack {
+                                Spacer()
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.gray, lineWidth: 2)
+                                        .frame(width: geometry.size.width * 0.8, height: geometry.size.width)
+                                    
+                                    SankeyCanvas()
+                                        .frame(width: geometry.size.width * 0.8, height: geometry.size.width * 0.8)
+                                }
+                                
+                                Spacer()
+                            }
+                        }
+                    }
+            }
+        }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(SampleData.shared.modelContainer)
 }
+
+#Preview {
+    Dashboard()
+        .modelContainer(SampleData.shared.modelContainer)
+}
+

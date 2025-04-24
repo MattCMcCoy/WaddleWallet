@@ -33,7 +33,7 @@ class SampleData {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }
-    
+
     private func insertSampleData() {
         for account in Account.sampleData {
             context.insert(account)

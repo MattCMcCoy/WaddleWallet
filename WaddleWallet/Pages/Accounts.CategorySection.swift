@@ -10,9 +10,9 @@ import SwiftUI
 struct AccountCategorySection: View {
     let title: String
     let accounts: [Account]
-    
+
     @State private var isExpanded = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button(action: {
@@ -46,7 +46,7 @@ struct AccountCategorySection: View {
                                             .font(.caption)
                                             .fontWeight(.bold)
                                             .foregroundColor(.white)
-                                            .padding(.top, 5)
+                                            .padding([.top, .leading], 8)
                                         Spacer()
                                     }
                                     .padding(.leading, 5)
@@ -54,20 +54,22 @@ struct AccountCategorySection: View {
                                     Spacer()
 
                                     Text(account.name)
+                                        .font(.callout)
                                         .foregroundColor(.white)
                                         .padding(8)
                                 }
                                 .frame(width: 200, height: 100)
                             }
-
+                            Spacer()
                             VStack {
                                 Text("Available Funds")
                                     .font(.footnote)
-                                    .fontWeight(.thin)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.gray)
 
                                 Text(account.balance.currencyFormatted)
                             }
+                            .padding(.trailing, 20)
                         }
                     }
                 }

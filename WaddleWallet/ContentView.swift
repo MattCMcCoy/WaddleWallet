@@ -11,6 +11,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var accounts: [Account]
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     @State private var tabs: [TabModel] = TabModel.Tab.allCases.map { TabModel(id: $0) }
     @State private var activeTab: TabModel.Tab? = .accounts
@@ -113,6 +114,7 @@ struct ContentView: View {
                         }
                     }) {
                         Text(tab.id.title)
+                            .font(.headline)
                             .fontWeight(.medium)
                             .foregroundColor(activeTab == tab.id ? .white : .blue)
                             .padding(.vertical, 8)
