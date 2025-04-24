@@ -52,20 +52,20 @@ struct Accounts: View {
     @ViewBuilder
     private var chartToggleButton: some View {
         if showChartTogglePopup {
-            Button(action: {
-                showNetAssets.toggle()
-                showChartTogglePopup = false
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: showNetAssets ? "chart.bar.xaxis" : "chart.line.uptrend.xyaxis")
-                    Text(showNetAssets ? "Show Assets vs Debt" : "Show Net Assets")
+                Button(action: {
+                    showNetAssets.toggle()
+                    showChartTogglePopup = false
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: showNetAssets ? "chart.bar.xaxis" : "chart.line.uptrend.xyaxis")
+                        Text(showNetAssets ? "Show Assets vs Debt" : "Show Net Assets")
+                    }
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
+                    .shadow(radius: 4)
                 }
-                .padding()
-                .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
-                .shadow(radius: 4)
-            }
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-            .padding(.bottom, 60)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(.bottom, 10)
         }
     }
 
@@ -81,7 +81,6 @@ struct Accounts: View {
                 Text("\(label):\n$\(String(format: "%.2f", value))")
                     .font(.footnote)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .lineLimit(nil)
